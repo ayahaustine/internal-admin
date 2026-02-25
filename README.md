@@ -97,11 +97,6 @@ Internal Admin follows these principles:
 - **Extensible via hooks** - Controlled override points
 - **DB-agnostic** - Works with SQLite and PostgreSQL
 
-## Documentation
-
-- [Architecture Guide](./architecture.md)
-- [Contributing Guidelines](./CONTRIBUTING.md) 
-- [Development Guide](./guide.md)
 
 ## Development
 
@@ -109,7 +104,7 @@ Internal Admin follows these principles:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/internal-admin.git
+git clone https://github.com/ayahaustine/internal-admin.git
 cd internal-admin
 
 # Setup development environment with uv
@@ -126,20 +121,6 @@ isort internal_admin tests
 
 # Type checking
 mypy internal_admin
-```
-
-### Project Structure
-
-```
-internal_admin/
-├── config.py          # Configuration system
-├── site.py             # AdminSite orchestrator  
-├── registry.py         # Model registration
-├── database/           # Database session management
-├── auth/              # Authentication & permissions
-├── admin/             # Core admin engine
-├── templates/         # Jinja2 templates
-└── static/           # CSS/JS assets
 ```
 
 ## License
