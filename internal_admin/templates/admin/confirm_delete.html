@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Delete {{ model_name }} - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+        Delete {{ model_name }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="../../" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to List
+        </a>
+    </div>
+</div>
+
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Confirm Deletion
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger" role="alert">
+            <strong>Warning:</strong> This action cannot be undone.
+        </div>
+        
+        <p class="mb-3">
+            Are you sure you want to delete this {{ model_name|lower }}?
+        </p>
+        
+        <!-- Show object details -->
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title">{{ model_name }} Details:</h6>
+                <dl class="row mb-0">
+                    {% for attr, value in object.__dict__.items() %}
+                        {% if not attr.startswith('_') %}
+                        <dt class="col-sm-3">{{ attr|title|replace('_', ' ') }}:</dt>
+                        <dd class="col-sm-9">{{ value or '-' }}</dd>
+                        {% endif %}
+                    {% endfor %}
+                </dl>
+            </div>
+        </div>
+        
+        <form method="post" class="mt-4">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash me-1"></i>
+                    Yes, Delete
+                </button>
+                <a href="../" class="btn btn-secondary">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

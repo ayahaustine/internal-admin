@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-{% if is_create %}plus-circle{% else %}pencil-square{% endif %} me-2"></i>
+        {{ title }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="../" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to List
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% for field in form_fields %}
+            <div class="mb-3">
+                <label for="id_{{ field.name }}" class="form-label">
+                    {{ field.label }}
+                    {% if field.required %}<span class="text-danger">*</span>{% endif %}
+                </label>
+                
+                {% if field.readonly %}
+                    {% if field.field_type == "checkbox" %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="id_{{ field.name }}" disabled
+                               {% if field.default_value %}checked{% endif %}>
+                        <label class="form-check-label text-muted" for="id_{{ field.name }}">
+                            {{ field.default_value|yesno:"Yes,No" }}
+                        </label>
+                    </div>
+                    {% else %}
+                    <input type="text" class="form-control" value="{{ field.default_value or '' }}" readonly>
+                    {% endif %}
+                {% else %}
+                    {% if field.field_type == "text" %}
+                    <input type="text" class="form-control" 
+                           id="id_{{ field.name }}" name="{{ field.name }}"
+                           value="{{ form_data.get(field.name, field.default_value) or '' }}"
+                           {% if field.required %}required{% endif %}>
+                    
+                    {% elif field.field_type == "textarea" %}
+                    <textarea class="form-control" rows="4"
+                              id="id_{{ field.name }}" name="{{ field.name }}"
+                              {% if field.required %}required{% endif %}>{{ form_data.get(field.name, field.default_value) or '' }}</textarea>
+                    
+                    {% elif field.field_type == "number" %}
+                    <input type="number" class="form-control"
+                           id="id_{{ field.name }}" name="{{ field.name }}"
+                           value="{{ form_data.get(field.name, field.default_value) or '' }}"
+                           {% if field.required %}required{% endif %}>
+                    
+                    {% elif field.field_type == "checkbox" %}
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input"
+                               id="id_{{ field.name }}" name="{{ field.name }}"
+                               value="true"
+                               {% if form_data.get(field.name, field.default_value) %}checked{% endif %}>
+                        <label class="form-check-label" for="id_{{ field.name }}">
+                            {{ field.label }}
+                        </label>
+                    </div>
+                    
+                    {% elif field.field_type == "select" %}
+                    <select class="form-select"
+                            id="id_{{ field.name }}" name="{{ field.name }}"
+                            {% if field.required %}required{% endif %}>
+                        {% if field.choices %}
+                            {% for value, display in field.choices %}
+                            <option value="{{ value }}"
+                                    {% if form_data.get(field.name, field.default_value) == value %}selected{% endif %}>
+                                {{ display }}
+                            </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    
+                    {% elif field.field_type == "date" %}
+                    <input type="date" class="form-control"
+                           id="id_{{ field.name }}" name="{{ field.name }}"
+                           value="{{ form_data.get(field.name, field.default_value) or '' }}"
+                           {% if field.required %}required{% endif %}>
+                    
+                    {% elif field.field_type == "datetime-local" %}
+                    <input type="datetime-local" class="form-control"
+                           id="id_{{ field.name }}" name="{{ field.name }}"
+                           value="{{ form_data.get(field.name, field.default_value) or '' }}"
+                           {% if field.required %}required{% endif %}>
+                    
+                    {% else %}
+                    <input type="text" class="form-control"
+                           id="id_{{ field.name }}" name="{{ field.name }}"
+                           value="{{ form_data.get(field.name, field.default_value) or '' }}"
+                           {% if field.required %}required{% endif %}>
+                    {% endif %}
+                {% endif %}
+                
+                {% if field.help_text %}
+                <div class="form-text">{{ field.help_text }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-1"></i>
+                    {% if is_create %}Create{% else %}Update{% endif %}
+                </button>
+                <a href="../" class="btn btn-secondary">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
