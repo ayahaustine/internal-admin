@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from ..config import AdminConfig
+from ..registry import get_registry
 from ..database.session import get_session
 from ..auth.routes import get_current_user, create_auth_dependency
 from ..auth.permissions import Permission
@@ -38,6 +39,33 @@ class AdminRouterFactory:
         """
         self.config = config
         self.templates = templates
+        self.registry = get_registry()
+    
+    def _get_registered_models(self, user: Any, prefix: str = "/admin") -> list:
+        """
+        Get registered models for sidebar navigation.
+        
+        Args:
+            user: Current authenticated user
+            prefix: URL prefix for admin routes
+            
+        Returns:
+            List of model info dictionaries for template context
+        """
+        registered_models = []
+        for model_class, model_admin_class in self.registry.get_registered_models().items():
+            model_admin = model_admin_class(model_class)
+            
+            # Check if user has view permission
+            if model_admin.has_view_permission(user):
+                registered_models.append({
+                    'name': model_class.__name__,
+                    'name_lower': model_class.__name__.lower(),
+                    'name_plural': f"{model_class.__name__}s",
+                    'url': f"{prefix}/{model_class.__name__.lower()}/",
+                })
+        
+        return registered_models
     
     def create_model_router(
         self,
@@ -117,6 +145,8 @@ class AdminRouterFactory:
                 "filters": filter_context,
                 "current_filters": filters,
                 "can_create": model_admin.has_create_permission(user),
+                "registered_models": self._get_registered_models(user),
+                "user": user,
             }
             
             return self.templates.TemplateResponse("admin/list.html", context)
@@ -142,8 +172,11 @@ class AdminRouterFactory:
                 "request": request,
                 "model_name": model_class.__name__,
                 "form_fields": form_fields,
+                "form_data": {},  # Empty for create form
                 "is_create": True,
                 "title": f"Create {model_class.__name__}",
+                "registered_models": self._get_registered_models(user),
+                "user": user,
             }
             
             return self.templates.TemplateResponse("admin/form.html", context)
@@ -207,6 +240,8 @@ class AdminRouterFactory:
                     "title": f"Create {model_class.__name__}",
                     "error": str(e),
                     "form_data": form_dict,
+                    "registered_models": self._get_registered_models(user),
+                    "user": user,
                 }
                 
                 return self.templates.TemplateResponse("admin/form.html", context)
@@ -240,14 +275,23 @@ class AdminRouterFactory:
             # Generate form fields with current values
             form_fields = form_engine.generate_form_fields(db, instance=obj)
             
+            # Extract current values for form_data
+            form_data = {}
+            for column in model_class.__table__.columns:
+                value = getattr(obj, column.name, None)
+                form_data[column.name] = value
+
             context = {
                 "request": request,
                 "model_name": model_class.__name__,
                 "form_fields": form_fields,
+                "form_data": form_data,
                 "is_create": False,
                 "title": f"Edit {model_class.__name__}",
                 "object": obj,
                 "object_id": item_id,
+                "registered_models": self._get_registered_models(user),
+                "user": user,
             }
             
             return self.templates.TemplateResponse("admin/form.html", context)
@@ -321,6 +365,8 @@ class AdminRouterFactory:
                     "object_id": item_id,
                     "error": str(e),
                     "form_data": form_dict,
+                    "registered_models": self._get_registered_models(user),
+                    "user": user,
                 }
                 
                 return self.templates.TemplateResponse("admin/form.html", context)
@@ -356,6 +402,9 @@ class AdminRouterFactory:
                 "model_name": model_class.__name__,
                 "object": obj,
                 "object_id": item_id,
+                "title": f"Delete {model_class.__name__}",
+                "registered_models": self._get_registered_models(user),
+                "user": user,
             }
             
             return self.templates.TemplateResponse("admin/confirm_delete.html", context)
