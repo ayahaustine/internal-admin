@@ -49,6 +49,7 @@ def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRo
         context = {
             "request": request,
             "title": "Admin Login",
+            "error": request.query_params.get("error"),
         }
         return templates.TemplateResponse("auth/login.html", context)
     
@@ -56,12 +57,25 @@ def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRo
     async def login_submit(
         request: Request,
         response: Response,
-        username: str = Form(...),
-        password: str = Form(...),
+        username: str = Form(default=""),
+        password: str = Form(default=""),
         db: Session = Depends(get_session)
     ) -> RedirectResponse:
         """Handle login form submission."""
+        # Validate that fields are not empty
+        if not username or not username.strip():
+            return RedirectResponse(
+                url="/admin/login?error=missing_fields",
+                status_code=status.HTTP_302_FOUND
+            )
+        if not password:
+            return RedirectResponse(
+                url="/admin/login?error=missing_fields",
+                status_code=status.HTTP_302_FOUND
+            )
+
         security = get_security_manager()
+        username = username.strip()
         
         # Query user by username or email
         user_query = db.query(config.user_model)
