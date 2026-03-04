@@ -120,6 +120,11 @@ class AdminSite:
         initialize_engine(self.config)
         initialize_session_manager()
         
+        # Ensure admin tables exist
+        from .database.admin_tables import create_admin_tables
+        from .database.engine import get_engine
+        create_admin_tables(get_engine())
+        
         # Initialize security
         initialize_security(self.config)
         
@@ -167,6 +172,7 @@ class AdminSite:
             # Check authentication manually
             from .auth.routes import get_current_user
             from .database.session import get_session
+            from .auth.activity import get_recent_activities
             
             # Get session and check auth
             session_gen = get_session()
@@ -192,11 +198,15 @@ class AdminSite:
                             'url': f"{prefix}/{model_class.__name__.lower()}/",
                         })
                 
+                # Get recent activities for the dashboard
+                recent_activities = get_recent_activities(db_session, limit=10)
+                
                 context = {
                     "request": request,
                     "title": "Admin Dashboard",
                     "registered_models": registered_models,
                     "user": user,
+                    "recent_activities": recent_activities,
                 }
                 
                 return self._templates.TemplateResponse("dashboard.html", context)

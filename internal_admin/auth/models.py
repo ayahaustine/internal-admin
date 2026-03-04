@@ -5,9 +5,10 @@ Provides base user model and authentication-related database models.
 """
 
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
@@ -80,6 +81,44 @@ class AdminUser(Base):
         # Base implementation denies all permissions for regular users
         # Projects should override this for custom permission logic
         return False
+
+
+class ActivityLog(Base):
+    """
+    Activity log model to track admin user actions.
+    
+    This model tracks all significant actions performed by admin users
+    including create, update, delete operations and login events.
+    """
+    
+    __tablename__ = "admin_activity_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("admin_users.id"), nullable=True, index=True)
+    action = Column(String(50), nullable=False, index=True)  # create, update, delete, login, etc.
+    model_name = Column(String(100), nullable=True, index=True)  # Target model name
+    object_id = Column(String(50), nullable=True)  # ID of the affected object
+    object_repr = Column(String(255), nullable=True)  # String representation of the object
+    description = Column(Text, nullable=True)  # Additional details
+    ip_address = Column(String(45), nullable=True)  # User's IP address
+    user_agent = Column(Text, nullable=True)  # User's browser/client info
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationship to user (nullable for system actions)
+    user = relationship("AdminUser", backref="activity_logs")
+    
+    def __repr__(self) -> str:
+        return f"<ActivityLog({self.action} on {self.model_name or 'system'})>"
+    
+    @property
+    def display_description(self) -> str:
+        """Get a human-readable description of the activity."""
+        if self.object_repr:
+            return f"{self.action.title()} {self.model_name}: {self.object_repr}"
+        elif self.model_name:
+            return f"{self.action.title()} {self.model_name}"
+        else:
+            return f"{self.action.title()}"
 
 
 def validate_user_model(user_model_class) -> None:

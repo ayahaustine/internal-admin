@@ -14,6 +14,7 @@ from ..config import AdminConfig
 from ..database.session import get_session
 from .security import get_security_manager
 from .models import validate_user_model
+from .activity import log_login
 
 
 def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRouter:
@@ -88,7 +89,16 @@ def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRo
         if hasattr(user, "last_login"):
             from datetime import datetime
             user.last_login = datetime.utcnow()
-            db.commit()
+        
+        # Log the login activity (before commit)
+        try:
+            log_login(session=db, user_id=user.id, request=request)
+        except Exception:
+            # Don't fail login if logging fails
+            pass
+            
+        # Commit both login update and activity log
+        db.commit()
         
         # Create session token
         session_token = security.create_session_token(user.id)

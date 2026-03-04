@@ -140,52 +140,102 @@
     </div>
     {% endif %}
 
-    <!-- Quick Actions -->
+    <!-- Recent Activity -->
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-lightning me-2"></i>
-                    Quick Actions
+                    <i class="bi bi-clock-history me-2"></i>
+                    Recent Activity
                 </h5>
+                {% if recent_activities %}
+                <span class="badge bg-secondary rounded-pill">{{ recent_activities|length }}</span>
+                {% endif %}
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                <i class="bi bi-list-ul"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Browse Records</h6>
-                                <small class="text-muted">View, search, and filter data</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                <i class="bi bi-plus-circle"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Add New Records</h6>
-                                <small class="text-muted">Create entries with validation</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center p-3 bg-light rounded">
-                            <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                <i class="bi bi-pencil-square"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-1">Edit & Delete</h6>
-                                <small class="text-muted">Modify or remove records</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {% if recent_activities %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-0 ps-4" style="width: 100px;">Action</th>
+                            <th class="border-0">Details</th>
+                            <th class="border-0">User</th>
+                            <th class="border-0" style="width: 160px;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in recent_activities %}
+                        <tr>
+                            <td class="ps-4">
+                                {% if activity.action == 'create' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="bi bi-plus-lg me-1"></i>Create
+                                </span>
+                                {% elif activity.action == 'update' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                    <i class="bi bi-pencil me-1"></i>Update
+                                </span>
+                                {% elif activity.action == 'delete' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </span>
+                                {% elif activity.action == 'login' %}
+                                <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                    <i class="bi bi-activity me-1"></i>{{ activity.action|title }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if activity.model_name and activity.object_repr %}
+                                <span class="fw-medium">{{ activity.model_name }}</span>
+                                <span class="text-muted mx-1">&mdash;</span>
+                                <span class="text-muted small">{{ activity.object_repr }}</span>
+                                {% elif activity.model_name %}
+                                <span class="fw-medium">{{ activity.model_name }}</span>
+                                {% elif activity.description %}
+                                <span class="text-muted">{{ activity.description }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if activity.user %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center small fw-bold" style="width: 26px; height: 26px; font-size: 0.65rem;">
+                                        {{ activity.user.display_name[0]|upper }}
+                                    </div>
+                                    <span class="small">{{ activity.user.display_name }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted small">System</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="text-muted small">{{ activity.created_at.strftime('%b %d, %Y') }}</span>
+                                <br>
+                                <span class="text-muted small">{{ activity.created_at.strftime('%H:%M:%S') }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% if recent_activities|length >= 10 %}
+            <div class="card-footer text-center py-2">
+                <small class="text-muted">Showing the 10 most recent actions</small>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="card-body text-center py-5">
+                <i class="bi bi-clock-history display-4 text-muted opacity-50 mb-3"></i>
+                <h6 class="text-muted mb-1">No Activity Yet</h6>
+                <p class="text-muted small mb-0">Actions such as creating, editing, or deleting records will appear here.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
