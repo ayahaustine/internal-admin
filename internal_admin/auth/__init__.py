@@ -9,12 +9,12 @@ This module provides:
 """
 
 from .models import AdminUser
-from .security import SecurityManager, hash_password, verify_password
 from .permissions import PermissionManager, has_permission
+from .security import SecurityManager, hash_password, verify_password
 
 __all__ = [
     "AdminUser",
-    "SecurityManager", 
+    "SecurityManager",
     "hash_password",
     "verify_password",
     "PermissionManager",
