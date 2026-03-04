@@ -9,10 +9,6 @@ session-based authentication, role-based permissions, and a clean Bootstrap 5 UI
 
 ## Screenshots
 
-**Login**
-
-![Login page](login.png)
-
 **Dashboard**
 
 ![Admin dashboard](dashboard.png)
