@@ -18,7 +18,7 @@ from .registry import get_registry
 from .database.engine import initialize_engine
 from .database.session import initialize_session_manager
 from .auth.security import initialize_security
-from .auth.routes import create_auth_router, require_auth, get_current_user
+from .auth.routes import create_auth_router, create_auth_dependency, get_current_user
 from .admin.model_admin import ModelAdmin
 from .admin.router_factory import AdminRouterFactory
 
