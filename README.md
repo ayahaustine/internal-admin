@@ -97,8 +97,29 @@ The admin interface is now available at `/admin/`.
 
 ### 3. Create a superuser
 
+The command reads `DATABASE_URL` and `SECRET_KEY` from your environment.
+The simplest approach is a `.env` file in the project root:
+
 ```bash
-python create_superuser.py
+# .env
+DATABASE_URL=sqlite:///./app.db
+SECRET_KEY=your-secret-key
+```
+
+Then run:
+
+```bash
+internal-admin createsuperuser
+```
+
+You will be prompted interactively for username, email, and password.
+To skip prompts (e.g. in CI), pass them as flags:
+
+```bash
+internal-admin createsuperuser \
+  --username admin \
+  --email admin@example.com \
+  --password change-me
 ```
 
 ---
@@ -202,14 +223,22 @@ A working demo application is included:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+```
 
+Create a superuser before starting the server:
+
+```bash
+internal-admin createsuperuser
+```
+
+Then start the server:
+
+```bash
 python3 demo_web.py
 ```
 
-Open [http://localhost:8080/admin/](http://localhost:8080/admin/) and log in with:
-
-- Username: `admin`
-- Password: `password123`
+Open [http://localhost:8080/admin/](http://localhost:8080/admin/) and log in with the
+credentials you just created. No default users are seeded.
 
 ---
 
