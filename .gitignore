@@ -224,3 +224,4 @@ build/
 
 # .env — never commit credentials; commit .env.example instead
 .env
+.DS_Store
