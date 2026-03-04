@@ -7,23 +7,23 @@ name = "internal-admin"
 version = "0.1.0"
 description = "A reusable, installable administrative framework for FastAPI applications"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Internal Admin Team"},
+    {name = "Ayah Austine"},
 ]
 keywords = ["fastapi", "admin", "sqlalchemy", "crud"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Framework :: FastAPI",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
 
 dependencies = [
@@ -41,18 +41,19 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
     "httpx>=0.24.0",
     "black>=23.0.0",
     "isort>=5.12.0",
-    "flake8>=6.0.0",
+    "ruff>=0.3.0",
     "mypy>=1.0.0",
     "pre-commit>=3.0.0",
+    "build>=1.0.0",
+    "python-semantic-release>=9.0.0",
+    "uvicorn>=0.20.0",
 ]
 postgresql = [
-    "psycopg[binary]>=3.1.0"
-]
-sqlite = [
-    "aiosqlite>=0.19.0"
+    "psycopg[binary]>=3.1.0",
 ]
 
 [project.scripts]
@@ -63,53 +64,121 @@ Homepage = "https://github.com/ayahaustine/internal-admin"
 Documentation = "https://internal-admin.readthedocs.io"
 Repository = "https://github.com/ayahaustine/internal-admin.git"
 "Bug Tracker" = "https://github.com/ayahaustine/internal-admin/issues"
+Changelog = "https://github.com/ayahaustine/internal-admin/blob/main/CHANGELOG.md"
+
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
 
 [tool.hatch.build.targets.wheel]
 packages = ["internal_admin"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/internal_admin",
+    "/tests",
+    "/CHANGELOG.md",
+    "/README.md",
+    "/LICENSE",
+]
+
+# ---------------------------------------------------------------------------
+# Linting / formatting
+# ---------------------------------------------------------------------------
+
 [tool.black]
 line-length = 88
-target-version = ['py38']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+target-version = ["py310"]
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 line_length = 88
 
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4"]
+ignore = [
+    "E501",
+    "B008",  # FastAPI Depends() in function defaults is the standard pattern
+]
+
+# ---------------------------------------------------------------------------
+# Type checking
+# ---------------------------------------------------------------------------
+
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
-disallow_untyped_decorators = true
 no_implicit_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
 strict_equality = true
+# Third-party stubs not available for all deps — ignore missing
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["internal_admin"]
+omit = ["tests/*", "demo_web.py", "demo.py", "example.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 70
+
+# ---------------------------------------------------------------------------
+# Semantic release
+# ---------------------------------------------------------------------------
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+version_variables = ["internal_admin/__init__.py:__version__"]
+branch = "main"
+changelog_file = "CHANGELOG.md"
+build_command = "pip install build && python -m build"
+dist_path = "dist/"
+upload_to_vcs_release = true
+upload_to_pypi = true
+commit_message = "chore(release): {version} [skip ci]"
+tag_format = "v{version}"
+major_on_zero = false
+
+[tool.semantic_release.changelog]
+template_dir = ""
+changelog_file = "CHANGELOG.md"
+exclude_commit_patterns = [
+    "^chore\\(release\\):",
+    "^Merge pull request",
+    "^Merge branch",
+]
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "chore", "ci", "build"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "refactor"]
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --tb=short"
