@@ -77,7 +77,7 @@ class DemoCategoryAdmin(ModelAdmin):
 
 
 class DemoProductAdmin(ModelAdmin):
-    list_display = ["id", "name", "price", "is_active"]
+    list_display = ["id", "name", "price", "description", "is_active"]
     search_fields = ["name", "description"]
     list_filter = ["is_active", "category_id"]
 
@@ -162,8 +162,12 @@ def create_demo_app():
     admin.mount(app)
     
     # Create database and demo data
+    from internal_admin.database.admin_tables import create_admin_tables
     engine = create_engine(config.database_url)
-    Base.metadata.create_all(engine)
+    
+    # Create both demo tables and admin tables
+    Base.metadata.create_all(engine)  # Demo tables
+    create_admin_tables(engine)  # Admin tables (users, activity logs)
     
     # Create security manager for password hashing
     security_manager = SecurityManager(config)

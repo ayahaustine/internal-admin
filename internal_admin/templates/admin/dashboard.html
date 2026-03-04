@@ -69,57 +69,82 @@
 
 {% if registered_models %}
 <div class="row mt-4">
-    <div class="col-12">
+    
+    <div class="col-lg-4">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Quick Start
+                    <i class="bi bi-clock-history me-2"></i>
+                    Recent Activity
                 </h5>
+                <span class="badge bg-secondary">{{ recent_activities|length }}</span>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="bi bi-list-ul"></i>
+            <div class="card-body p-0">
+                {% if recent_activities %}
+                <div class="list-group list-group-flush">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                {% if activity.action == 'create' %}
+                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-plus-lg" style="font-size: 0.8rem;"></i>
                                 </div>
+                                {% elif activity.action == 'update' %}
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-pencil" style="font-size: 0.8rem;"></i>
+                                </div>
+                                {% elif activity.action == 'delete' %}
+                                <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-trash" style="font-size: 0.8rem;"></i>
+                                </div>
+                                {% elif activity.action == 'login' %}
+                                <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-box-arrow-in-right" style="font-size: 0.8rem;"></i>
+                                </div>
+                                {% else %}
+                                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-activity" style="font-size: 0.8rem;"></i>
+                                </div>
+                                {% endif %}
                             </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-1">Browse Records</h6>
-                                <small class="text-muted">View, search, and filter your data</small>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1 fw-semibold">{{ activity.display_description }}</h6>
+                                        <p class="mb-1 text-muted small">
+                                            {% if activity.user %}
+                                            by {{ activity.user.display_name }}
+                                            {% else %}
+                                            System action
+                                            {% endif %}
+                                        </p>
+                                        {% if activity.description %}
+                                        <small class="text-muted">{{ activity.description }}</small>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted ms-2">
+                                        {{ activity.created_at.strftime('%m/%d %H:%M') }}
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="bi bi-plus-circle"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-1">Add New Records</h6>
-                                <small class="text-muted">Create new entries with validation</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="bi bi-pencil-square"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-1">Edit & Delete</h6>
-                                <small class="text-muted">Modify or remove existing records</small>
-                            </div>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-clock-history display-6 text-muted"></i>
+                    <p class="text-muted mt-2 mb-0">No recent activity</p>
+                    <small class="text-muted">Activity will appear here as you use the admin</small>
+                </div>
+                {% endif %}
             </div>
+            {% if recent_activities|length >= 10 %}
+            <div class="card-footer text-center">
+                <small class="text-muted">Showing latest 10 activities</small>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

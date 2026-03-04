@@ -15,6 +15,7 @@ from ..registry import get_registry
 from ..database.session import get_session
 from ..auth.routes import get_current_user, create_auth_dependency
 from ..auth.permissions import Permission
+from ..auth.activity import log_create, log_update, log_delete
 from .model_admin import ModelAdmin
 from .query_engine import QueryEngine
 from .form_engine import FormEngine
@@ -214,6 +215,21 @@ class AdminRouterFactory:
                 
                 # Save to database
                 db.add(instance)
+                
+                # Log the activity (before commit)
+                try:
+                    log_create(
+                        session=db,
+                        user_id=user.id,
+                        model_name=model_class.__name__,
+                        object_id=instance.id,
+                        object_repr=str(instance),
+                        request=request,
+                    )
+                except Exception:
+                    # Don't fail the main operation if logging fails
+                    pass
+                
                 db.commit()
                 
                 # Call after_save hook
@@ -336,6 +352,20 @@ class AdminRouterFactory:
                 # Update instance
                 form_engine.populate_instance(obj, validated_data)
                 
+                # Log the activity (before commit)
+                try:
+                    log_update(
+                        session=db,
+                        user_id=user.id,
+                        model_name=model_class.__name__,
+                        object_id=obj.id,
+                        object_repr=str(obj),
+                        request=request,
+                    )
+                except Exception:
+                    # Don't fail the main operation if logging fails
+                    pass
+                
                 # Save to database
                 db.commit()
                 
@@ -436,8 +466,26 @@ class AdminRouterFactory:
                 )
             
             try:
+                # Store object info before deletion
+                object_repr = str(obj)
+                object_id = obj.id
+                
                 # Call before_delete hook
                 model_admin.before_delete(obj)
+                
+                # Log the activity (before delete and commit)
+                try:
+                    log_delete(
+                        session=db,
+                        user_id=user.id,
+                        model_name=model_class.__name__,
+                        object_id=object_id,
+                        object_repr=object_repr,
+                        request=request,
+                    )
+                except Exception:
+                    # Don't fail the main operation if logging fails
+                    pass
                 
                 # Delete object
                 db.delete(obj)
