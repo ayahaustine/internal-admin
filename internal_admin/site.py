@@ -8,8 +8,8 @@ It manages model registration, router generation, and FastAPI integration.
 import os
 from typing import Any, Dict, Type, Optional
 from pathlib import Path
-from fastapi import FastAPI, APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 
@@ -18,7 +18,7 @@ from .registry import get_registry
 from .database.engine import initialize_engine
 from .database.session import initialize_session_manager
 from .auth.security import initialize_security
-from .auth.routes import create_auth_router, require_auth
+from .auth.routes import create_auth_router, require_auth, get_current_user
 from .admin.model_admin import ModelAdmin
 from .admin.router_factory import AdminRouterFactory
 
@@ -161,32 +161,51 @@ class AdminSite:
         # Dashboard endpoint
         @router.get("/", response_class=HTMLResponse, name="admin_dashboard")
         async def dashboard(
-            request: Request,
-            user: Any = require_auth
+            request: Request
         ) -> HTMLResponse:
             """Admin dashboard page."""
-            # Get registered models for navigation
-            registered_models = []
-            for model_class, model_admin_class in self.registry.get_registered_models().items():
-                model_admin = model_admin_class(model_class)
+            # Check authentication manually
+            from .auth.routes import get_current_user
+            from .database.session import get_session
+            
+            # Get session and check auth
+            session_gen = get_session()
+            db_session = next(session_gen)
+            user = get_current_user(request, self.config, db_session)
+            
+            try:
+                # Redirect to login if not authenticated
+                if user is None:
+                    return RedirectResponse(url=f"{prefix}/login", status_code=302)
+                    
+                # Get registered models for navigation
+                registered_models = []
+                for model_class, model_admin_class in self.registry.get_registered_models().items():
+                    model_admin = model_admin_class(model_class)
+                    
+                    # Check if user has view permission
+                    if model_admin.has_view_permission(user):
+                        registered_models.append({
+                            'name': model_class.__name__,
+                            'name_lower': model_class.__name__.lower(),
+                            'name_plural': f"{model_class.__name__}s",
+                            'url': f"{prefix}/{model_class.__name__.lower()}/",
+                        })
                 
-                # Check if user has view permission
-                if model_admin.has_view_permission(user):
-                    registered_models.append({
-                        'name': model_class.__name__,
-                        'name_lower': model_class.__name__.lower(),
-                        'name_plural': f"{model_class.__name__}s",
-                        'url': f"{prefix}/{model_class.__name__.lower()}/",
-                    })
-            
-            context = {
-                "request": request,
-                "title": "Admin Dashboard",
-                "registered_models": registered_models,
-                "user": user,
-            }
-            
-            return self._templates.TemplateResponse("admin/dashboard.html", context)
+                context = {
+                    "request": request,
+                    "title": "Admin Dashboard",
+                    "registered_models": registered_models,
+                    "user": user,
+                }
+                
+                return self._templates.TemplateResponse("dashboard.html", context)
+            finally:
+                # Close session properly
+                try:
+                    next(session_gen)
+                except StopIteration:
+                    pass
         
         # Include authentication routes
         auth_router = create_auth_router(self.config, self._templates)
