@@ -1,185 +1,176 @@
 #!/usr/bin/env python3
 """
-Demo script for Internal Admin Framework.
+Demo web server for Internal Admin Framework.
 
-This script demonstrates the internal-admin framework setup and usage.
+Configuration is read from a .env file or environment variables:
+
+    DATABASE_URL=sqlite:///./demo.db
+    SECRET_KEY=your-secret-key
+
+Before starting the server for the first time, create a superuser:
+
+    internal-admin createsuperuser
 """
 
-import asyncio
-import sys
 import os
-from pathlib import Path
 
-# Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
+except ImportError:
+    pass
+
+from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, create_engine
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from datetime import datetime
+import uvicorn
 
 from internal_admin import AdminSite, AdminConfig, ModelAdmin
 from internal_admin.auth.models import AdminUser
-from internal_admin.auth.security import hash_password
-
-# Import example models from example.py
-from example import User, Category, Product, CategoryAdmin, ProductAdmin
 
 
-def print_header(title: str):
-    """Print a formatted header."""
-    print("\n" + "=" * 60)
-    print(f"🎯 {title}")
-    print("=" * 60)
+class AdminUserAdmin(ModelAdmin):
+    list_display = ["id", "username", "email", "is_superuser", "is_active", "created_at"]
+    search_fields = ["username", "email"]
+    list_filter = ["is_superuser", "is_active"]
+    ordering = ["username"]
+    readonly_fields = ["created_at", "last_login"]
+    exclude_fields = ["password_hash"]
+
+# Demo models
+Base = declarative_base()
 
 
-def print_success(message: str):
-    """Print a success message."""
-    print(f"✅ {message}")
+class DemoCategory(Base):
+    """Demo category model."""
+    __tablename__ = "demo_categories"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, unique=True)
+    description = Column(String(255))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    products = relationship("DemoProduct", back_populates="category")
 
 
-def print_info(message: str):
-    """Print an info message."""
-    print(f"ℹ️  {message}")
+class DemoProduct(Base):
+    """Demo product model."""
+    __tablename__ = "demo_products"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(500))
+    price = Column(Integer)  # Price in cents
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    category_id = Column(Integer, ForeignKey("demo_categories.id"))
+    
+    category = relationship("DemoCategory", back_populates="products")
 
 
-def print_warning(message: str):
-    """Print a warning message."""
-    print(f"⚠️  {message}")
+# Admin classes
+class DemoCategoryAdmin(ModelAdmin):
+    list_display = ["id", "name", "is_active", "created_at"]
+    search_fields = ["name", "description"]
+    list_filter = ["is_active"]
+    ordering = ["name"]
 
 
-def main():
-    """Run the internal-admin demo."""
-    
-    print_header("Internal Admin Framework Demo")
-    
-    print_info("This demo shows the setup and capabilities of the internal-admin framework")
-    print_info("A Django-style admin interface for FastAPI applications")
-    
-    # 1. Configuration Demo
-    print_header("1. Configuration Setup")
-    
-    config = AdminConfig(
-        database_url="sqlite:///./demo.db",
-        secret_key="demo-secret-key-change-in-production", 
-        user_model=User,
-        debug=True
-    )
-    
-    print_success("AdminConfig created")
-    print_info(f"Database: {config.database_url}")
-    print_info(f"Database Type: {'SQLite' if config.is_sqlite else 'PostgreSQL'}")
-    print_info(f"Debug Mode: {config.debug}")
-    
-    # 2. Admin Site Setup
-    print_header("2. AdminSite Setup")
-    
-    admin = AdminSite(config)
-    print_success("AdminSite created")
-    
-    # 3. Model Registration
-    print_header("3. Model Registration")
-    
-    # Register models with their admin classes
-    admin.register(Category, CategoryAdmin)
-    admin.register(Product, ProductAdmin) 
-    admin.register(User)  # Uses default ModelAdmin
-    
-    print_success("Category registered with CategoryAdmin")
-    print_success("Product registered with ProductAdmin")
-    print_success("User registered with default ModelAdmin")
-    
-    # Show registered models
-    registered_models = admin.get_registered_models()
-    print_info(f"Total registered models: {len(registered_models)}")
-    
-    for model_class, admin_class in registered_models.items():
-        print_info(f"  • {model_class.__name__} → {admin_class.__name__}")
-    
-    # 4. ModelAdmin Configuration Examples
-    print_header("4. ModelAdmin Configuration Examples")
-    
-    category_admin = admin.get_model_admin(Category)
-    print_info("CategoryAdmin Configuration:")
-    print_info(f"  • List Display: {category_admin.get_list_display()}")
-    print_info(f"  • Search Fields: {category_admin.get_search_fields()}")
-    print_info(f"  • List Filters: {category_admin.get_list_filter()}")
-    print_info(f"  • Ordering: {category_admin.get_ordering()}")
-    
-    product_admin = admin.get_model_admin(Product)
-    print_info("ProductAdmin Configuration:")
-    print_info(f"  • List Display: {product_admin.get_list_display()}")
-    print_info(f"  • Search Fields: {product_admin.get_search_fields()}")
-    print_info(f"  • List Filters: {product_admin.get_list_filter()}")
-    print_info(f"  • Read-only Fields: {product_admin.get_readonly_fields()}")
-    
-    # 5. Architecture Overview
-    print_header("5. Framework Architecture")
-    
-    print_info("🏗️  Architecture Components:")
-    print_info("  • AdminSite - Central orchestrator")
-    print_info("  • ModelAdmin - Per-model configuration")
-    print_info("  • AdminConfig - Configuration container")
-    print_info("  • Registry - Model registration system")
-    print_info("  • Query Engine - Database query pipeline")
-    print_info("  • Form Engine - Form generation and validation")
-    print_info("  • Router Factory - Dynamic route generation")
-    print_info("  • Authentication - Session-based auth system")
-    print_info("  • Permission System - Role-based access control")
-    
-    # 6. Generated Routes Overview
-    print_header("6. Generated Admin Routes")
-    
-    print_info("🛣️  Auto-generated Routes per Model:")
-    print_info("  • GET  /admin/{model}/           - List view")
-    print_info("  • GET  /admin/{model}/create/    - Create form")
-    print_info("  • POST /admin/{model}/create/    - Create submit")
-    print_info("  • GET  /admin/{model}/{id}/      - Edit form")
-    print_info("  • POST /admin/{model}/{id}/      - Edit submit")
-    print_info("  • GET  /admin/{model}/{id}/delete/ - Delete confirmation")
-    print_info("  • POST /admin/{model}/{id}/delete/ - Delete submit")
-    
-    print_info("🔐 Authentication Routes:")
-    print_info("  • GET  /admin/login  - Login form")
-    print_info("  • POST /admin/login  - Login submit")
-    print_info("  • POST /admin/logout - Logout")
-    
-    print_info("📊 Dashboard:")
-    print_info("  • GET  /admin/       - Admin dashboard")
-    
-    # 7. Features Summary
-    print_header("7. Key Features")
-    
-    features = [
-        "🎨 Django-style admin interface",
-        "📝 Automatic CRUD generation from SQLAlchemy models", 
-        "🔍 Built-in search and filtering",
-        "📄 Pagination with configurable page sizes",
-        "🔐 Session-based authentication",
-        "🛡️  Role-based permission system",
-        "📱 Responsive Bootstrap 5 UI", 
-        "🗄️  SQLite & PostgreSQL support",
-        "⚡ FastAPI integration",
-        "🎛️  Extensible via ModelAdmin classes",
-        "🔧 Form validation and type conversion",
-        "🪝 Model lifecycle hooks (before_save, after_save, etc.)",
-        "🎯 Zero frontend build tools required",
-        "📦 Pip-installable package"
+class DemoProductAdmin(ModelAdmin):
+    list_display = ["id", "name", "price", "description", "is_active"]
+    search_fields = ["name", "description"]
+    list_filter = ["is_active", "category_id"]
+
+
+def create_demo_data(session):
+    """Seed demo categories and products. Never creates users."""
+    if session.query(DemoCategory).count() > 0:
+        return
+
+    electronics = DemoCategory(name="Electronics", description="Electronic devices")
+    books = DemoCategory(name="Books", description="Books and literature")
+    session.add_all([electronics, books])
+    session.commit()
+
+    products = [
+        DemoProduct(name="Laptop", description="Gaming laptop", price=99999, category=electronics),
+        DemoProduct(name="Phone", description="Smartphone", price=79999, category=electronics),
+        DemoProduct(name="Python Guide", description="Learn Python programming", price=2999, category=books),
+        DemoProduct(name="Django Book", description="Web development with Django", price=3499, category=books),
     ]
+    session.add_all(products)
+    session.commit()
+
+
+def create_demo_app():
+    """Create demo FastAPI app with authentication."""
+
+    app = FastAPI(
+        title="Internal Admin Demo",
+        description="Demo of internal-admin framework.",
+        version="1.0.0",
+    )
+
+    # Read config from environment / .env file
+    database_url = os.environ.get("DATABASE_URL", "sqlite:///./demo.db")
+    secret_key = os.environ.get("SECRET_KEY", "demo-secret-key-change-in-production")
+
+    config = AdminConfig(
+        database_url=database_url,
+        secret_key=secret_key,
+        user_model=AdminUser,
+        debug=True,
+    )
+
+    admin = AdminSite(config)
+    admin.register(DemoCategory, DemoCategoryAdmin)
+    admin.register(DemoProduct, DemoProductAdmin)
+    admin.register(AdminUser, AdminUserAdmin)
     
-    for feature in features:
-        print_info(f"  {feature}")
+    # Mount admin interface
+    admin.mount(app)
     
-    # 8. Next Steps
-    print_header("8. Next Steps")
+    # Create database and demo data
+    from internal_admin.database.admin_tables import create_admin_tables
+    engine = create_engine(config.database_url)
     
-    print_info("To try the admin interface:")
-    print_info("1. Run: python create_superuser.py")
-    print_info("2. Run: python example.py")
-    print_info("3. Visit: http://localhost:8000/admin/")
+    # Create both demo tables and admin tables
+    Base.metadata.create_all(engine)  # Demo tables
+    create_admin_tables(engine)  # Admin tables (users, activity logs)
+
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    create_demo_data(session)
+    session.close()
     
-    print_warning("Note: This is a demonstration - use proper secrets in production!")
+    # Root redirect
+    @app.get("/")
+    async def root():
+        return RedirectResponse(url="/admin/", status_code=302)
     
-    print_header("Demo Complete")
-    print_success("The internal-admin framework is ready to use!")
-    print_info("Check the example.py file for a complete FastAPI application setup")
+    return app
 
 
 if __name__ == "__main__":
-    main()
+    db = os.environ.get("DATABASE_URL", "sqlite:///./demo.db")
+    print("Internal Admin Demo Server")
+    print("=" * 60)
+    print("Admin Interface: http://localhost:8080/admin/")
+    print("Database:        " + db)
+    print("=" * 60)
+    print("No default users are created.")
+    print("Run `internal-admin createsuperuser` first if you have")
+    print("not already done so.")
+    print("=" * 60)
+    
+    app = create_demo_app()
+    
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8080,
+        reload=False
+    )

@@ -76,8 +76,8 @@ def cmd_createsuperuser(args: argparse.Namespace) -> int:
     # Deferred so the module can be imported cheaply (e.g. for --help)
     try:
         from sqlalchemy import create_engine
-        from sqlalchemy.orm import sessionmaker
         from sqlalchemy.exc import IntegrityError
+        from sqlalchemy.orm import sessionmaker
 
         from internal_admin.auth.models import AdminUser, Base
         from internal_admin.auth.security import hash_password, initialize_security

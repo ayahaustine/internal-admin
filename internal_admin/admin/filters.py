@@ -5,10 +5,11 @@ Provides filtering capabilities for admin list pages,
 including field-based filters and search functionality.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Type
 from abc import ABC, abstractmethod
+from typing import Any
+
+from sqlalchemy import Boolean, Date, DateTime
 from sqlalchemy.orm import Session
-from sqlalchemy import Column, Boolean, Integer, String, DateTime, Date
 
 from .model_admin import ModelAdmin
 
@@ -16,45 +17,45 @@ from .model_admin import ModelAdmin
 class BaseFilter(ABC):
     """
     Abstract base class for admin filters.
-    
+
     Filters provide a way to limit the objects shown in list views
     based on field values or other criteria.
     """
-    
-    def __init__(self, field_name: str, title: Optional[str] = None) -> None:
+
+    def __init__(self, field_name: str, title: str | None = None) -> None:
         """
         Initialize filter.
-        
+
         Args:
             field_name: Name of model field to filter on
             title: Display title for filter (defaults to field name)
         """
         self.field_name = field_name
         self.title = title or field_name.replace('_', ' ').title()
-    
+
     @abstractmethod
-    def get_choices(self, session: Session, model_class: Type[Any]) -> List[Tuple[Any, str]]:
+    def get_choices(self, session: Session, model_class: type[Any]) -> list[tuple[Any, str]]:
         """
         Get available filter choices.
-        
+
         Args:
             session: SQLAlchemy session
             model_class: Model class being filtered
-            
+
         Returns:
             List of (value, display_name) tuples
         """
         pass
-    
+
     @abstractmethod
     def apply_filter(self, query: Any, value: Any) -> Any:
         """
         Apply filter to query.
-        
+
         Args:
             query: SQLAlchemy query to modify
             value: Filter value selected by user
-            
+
         Returns:
             Modified query
         """
@@ -64,38 +65,38 @@ class BaseFilter(ABC):
 class FieldFilter(BaseFilter):
     """
     Generic filter for model fields.
-    
+
     Automatically determines filter behavior based on field type.
     """
-    
-    def get_choices(self, session: Session, model_class: Type[Any]) -> List[Tuple[Any, str]]:
+
+    def get_choices(self, session: Session, model_class: type[Any]) -> list[tuple[Any, str]]:
         """Get distinct values for the field."""
         if not hasattr(model_class, self.field_name):
             return []
-        
+
         field = getattr(model_class, self.field_name)
-        
+
         # Get distinct non-null values
         distinct_query = session.query(field).distinct().filter(field.is_not(None))
-        
+
         choices = []
         for (value,) in distinct_query.all():
             display_name = str(value) if value is not None else "N/A"
             choices.append((value, display_name))
-        
+
         # Sort by display name
         choices.sort(key=lambda x: x[1])
-        
+
         return choices
-    
+
     def apply_filter(self, query: Any, value: Any) -> Any:
         """Apply exact match filter."""
         if not value or not hasattr(query.column_descriptions[0]['type'], self.field_name):
             return query
-        
+
         model_class = query.column_descriptions[0]['type']
         field = getattr(model_class, self.field_name)
-        
+
         return query.filter(field == value)
 
 
@@ -103,28 +104,28 @@ class BooleanFilter(BaseFilter):
     """
     Filter for boolean fields with Yes/No choices.
     """
-    
-    def get_choices(self, session: Session, model_class: Type[Any]) -> List[Tuple[Any, str]]:
+
+    def get_choices(self, session: Session, model_class: type[Any]) -> list[tuple[Any, str]]:
         """Return Yes/No choices for boolean field."""
         return [
             (True, "Yes"),
             (False, "No"),
         ]
-    
+
     def apply_filter(self, query: Any, value: Any) -> Any:
         """Apply boolean filter."""
         if value is None:
             return query
-        
+
         model_class = query.column_descriptions[0]['type']
         field = getattr(model_class, self.field_name)
-        
+
         # Convert string values to boolean
         if isinstance(value, str):
             bool_value = value.lower() in ('true', '1', 'yes')
         else:
             bool_value = bool(value)
-        
+
         return query.filter(field == bool_value)
 
 
@@ -132,35 +133,35 @@ class DateRangeFilter(BaseFilter):
     """
     Filter for date fields with predefined ranges.
     """
-    
-    def get_choices(self, session: Session, model_class: Type[Any]) -> List[Tuple[Any, str]]:
+
+    def get_choices(self, session: Session, model_class: type[Any]) -> list[tuple[Any, str]]:
         """Return predefined date range choices."""
         from datetime import datetime, timedelta
-        
+
         today = datetime.now().date()
-        week_ago = today - timedelta(days=7)
-        month_ago = today - timedelta(days=30)
-        year_ago = today - timedelta(days=365)
-        
+        today - timedelta(days=7)
+        today - timedelta(days=30)
+        today - timedelta(days=365)
+
         return [
             ("today", "Today"),
             ("week", "Last 7 days"),
             ("month", "Last 30 days"),
             ("year", "Last year"),
         ]
-    
+
     def apply_filter(self, query: Any, value: Any) -> Any:
         """Apply date range filter."""
         if not value:
             return query
-        
+
         from datetime import datetime, timedelta
-        
+
         model_class = query.column_descriptions[0]['type']
         field = getattr(model_class, self.field_name)
-        
+
         today = datetime.now().date()
-        
+
         if value == "today":
             return query.filter(field == today)
         elif value == "week":
@@ -172,7 +173,7 @@ class DateRangeFilter(BaseFilter):
         elif value == "year":
             year_ago = today - timedelta(days=365)
             return query.filter(field >= year_ago)
-        
+
         return query
 
 
@@ -180,16 +181,16 @@ class ForeignKeyFilter(BaseFilter):
     """
     Filter for foreign key relationships.
     """
-    
+
     def __init__(
-        self, 
-        field_name: str, 
-        title: Optional[str] = None,
+        self,
+        field_name: str,
+        title: str | None = None,
         display_field: str = "id"
     ) -> None:
         """
         Initialize foreign key filter.
-        
+
         Args:
             field_name: Name of foreign key field
             title: Display title
@@ -197,39 +198,39 @@ class ForeignKeyFilter(BaseFilter):
         """
         super().__init__(field_name, title)
         self.display_field = display_field
-    
-    def get_choices(self, session: Session, model_class: Type[Any]) -> List[Tuple[Any, str]]:
+
+    def get_choices(self, session: Session, model_class: type[Any]) -> list[tuple[Any, str]]:
         """Get choices from related model."""
         if not hasattr(model_class, self.field_name):
             return []
-        
+
         # This is simplified - in practice you'd need proper relationship introspection
         # For now, return empty choices
         return []
-    
+
     def apply_filter(self, query: Any, value: Any) -> Any:
         """Apply foreign key filter."""
         if not value:
             return query
-        
+
         model_class = query.column_descriptions[0]['type']
         field = getattr(model_class, self.field_name)
-        
+
         return query.filter(field == value)
 
 
 class FilterManager:
     """
     Manages filters for a ModelAdmin.
-    
+
     Automatically creates appropriate filters based on model fields
     and ModelAdmin configuration.
     """
-    
+
     def __init__(self, model_admin: ModelAdmin) -> None:
         """
         Initialize FilterManager.
-        
+
         Args:
             model_admin: ModelAdmin instance
         """
@@ -237,42 +238,42 @@ class FilterManager:
         self.model = model_admin.model
         self._filters = {}
         self._create_filters()
-    
+
     def _create_filters(self) -> None:
         """Create filters based on ModelAdmin configuration."""
         filter_fields = self.model_admin.get_list_filter()
-        
+
         for field_name in filter_fields:
             filter_obj = self._create_filter_for_field(field_name)
             if filter_obj:
                 self._filters[field_name] = filter_obj
-    
-    def _create_filter_for_field(self, field_name: str) -> Optional[BaseFilter]:
+
+    def _create_filter_for_field(self, field_name: str) -> BaseFilter | None:
         """
         Create appropriate filter for a field.
-        
+
         Args:
             field_name: Name of field to create filter for
-            
+
         Returns:
             Filter instance or None
         """
         if not hasattr(self.model, field_name):
             return None
-        
+
         # Find the column in the table
         column = None
         for col in self.model.__table__.columns:
             if col.name == field_name:
                 column = col
                 break
-        
+
         if column is None:
             return None
-        
+
         # Create filter based on column type
         column_type = type(column.type)
-        
+
         if column_type == Boolean:
             return BooleanFilter(field_name)
         elif column_type in (DateTime, Date):
@@ -281,49 +282,49 @@ class FilterManager:
             return ForeignKeyFilter(field_name)
         else:
             return FieldFilter(field_name)
-    
-    def get_filters(self) -> Dict[str, BaseFilter]:
+
+    def get_filters(self) -> dict[str, BaseFilter]:
         """
         Get all configured filters.
-        
+
         Returns:
             Dictionary of field_name -> Filter
         """
         return self._filters.copy()
-    
-    def get_filter(self, field_name: str) -> Optional[BaseFilter]:
+
+    def get_filter(self, field_name: str) -> BaseFilter | None:
         """
         Get filter for specific field.
-        
+
         Args:
             field_name: Name of field
-            
+
         Returns:
             Filter instance or None
         """
         return self._filters.get(field_name)
-    
-    def get_filter_context(self, session: Session, current_filters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def get_filter_context(self, session: Session, current_filters: dict[str, Any]) -> dict[str, Any]:
         """
         Get template context for filters.
-        
+
         Args:
             session: SQLAlchemy session
             current_filters: Currently applied filter values
-            
+
         Returns:
             Template context for filters
         """
         filter_context = {}
-        
+
         for field_name, filter_obj in self._filters.items():
             choices = filter_obj.get_choices(session, self.model)
             current_value = current_filters.get(field_name)
-            
+
             filter_context[field_name] = {
                 'title': filter_obj.title,
                 'choices': choices,
                 'current_value': current_value,
             }
-        
+
         return filter_context

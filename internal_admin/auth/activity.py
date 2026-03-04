@@ -4,9 +4,10 @@ Activity logging utilities for Internal Admin.
 Provides functions to log user activities and system events.
 """
 
-from typing import Optional, Any
-from sqlalchemy.orm import Session
+from typing import Any
+
 from fastapi import Request
+from sqlalchemy.orm import Session
 
 from .models import ActivityLog
 
@@ -14,16 +15,16 @@ from .models import ActivityLog
 def log_activity(
     session: Session,
     action: str,
-    user_id: Optional[int] = None,
-    model_name: Optional[str] = None,
-    object_id: Optional[str] = None,
-    object_repr: Optional[str] = None,
-    description: Optional[str] = None,
-    request: Optional[Request] = None,
+    user_id: int | None = None,
+    model_name: str | None = None,
+    object_id: str | None = None,
+    object_repr: str | None = None,
+    description: str | None = None,
+    request: Request | None = None,
 ) -> ActivityLog:
     """
     Log an activity to the database.
-    
+
     Args:
         session: Database session
         action: Action type (create, update, delete, login, etc.)
@@ -33,17 +34,17 @@ def log_activity(
         object_repr: String representation of the object
         description: Additional description
         request: FastAPI request object for IP/user agent
-        
+
     Returns:
         Created ActivityLog instance
     """
     ip_address = None
     user_agent = None
-    
+
     if request:
         ip_address = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
-    
+
     activity = ActivityLog(
         user_id=user_id,
         action=action,
@@ -54,13 +55,13 @@ def log_activity(
         ip_address=ip_address,
         user_agent=user_agent,
     )
-    
+
     session.add(activity)
     session.flush()  # Flush but don't commit - let caller handle commit
     return activity
 
 
-def log_login(session: Session, user_id: int, request: Optional[Request] = None) -> ActivityLog:
+def log_login(session: Session, user_id: int, request: Request | None = None) -> ActivityLog:
     """Log a successful login."""
     return log_activity(
         session=session,
@@ -71,7 +72,7 @@ def log_login(session: Session, user_id: int, request: Optional[Request] = None)
     )
 
 
-def log_logout(session: Session, user_id: int, request: Optional[Request] = None) -> ActivityLog:
+def log_logout(session: Session, user_id: int, request: Request | None = None) -> ActivityLog:
     """Log a logout."""
     return log_activity(
         session=session,
@@ -88,7 +89,7 @@ def log_create(
     model_name: str,
     object_id: Any,
     object_repr: str,
-    request: Optional[Request] = None,
+    request: Request | None = None,
 ) -> ActivityLog:
     """Log object creation."""
     return log_activity(
@@ -109,7 +110,7 @@ def log_update(
     model_name: str,
     object_id: Any,
     object_repr: str,
-    request: Optional[Request] = None,
+    request: Request | None = None,
 ) -> ActivityLog:
     """Log object update."""
     return log_activity(
@@ -130,7 +131,7 @@ def log_delete(
     model_name: str,
     object_id: Any,
     object_repr: str,
-    request: Optional[Request] = None,
+    request: Request | None = None,
 ) -> ActivityLog:
     """Log object deletion."""
     return log_activity(
@@ -148,11 +149,11 @@ def log_delete(
 def get_recent_activities(session: Session, limit: int = 10) -> list[ActivityLog]:
     """
     Get recent activities for display.
-    
+
     Args:
         session: Database session
         limit: Maximum number of activities to return
-        
+
     Returns:
         List of recent ActivityLog instances
     """

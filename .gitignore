@@ -217,3 +217,11 @@ ai_contribute.md
 
 # sqlite db
 *.db
+
+# Release build artefacts
+dist/
+build/
+
+# .env — never commit credentials; commit .env.example instead
+.env
+.DS_Store

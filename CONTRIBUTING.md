@@ -55,20 +55,27 @@ source .venv/bin/activate
 
 # Install in editable mode with development dependencies
 pip install -e ".[dev]"
+
+# Install git hooks (enforces formatting and commit message format locally)
+pre-commit install --install-hooks
+pre-commit install --hook-type commit-msg
 ```
 
-To run the demo server:
+To create a superuser and run the demo server:
 
 ```bash
-python3 demo_web.py
+internal-admin createsuperuser
+python3 demo.py
 # Admin interface: http://localhost:8080/admin/
-# Login: admin / password123
 ```
 
 To run the test suite:
 
 ```bash
 pytest tests/ -v
+
+# With coverage
+pytest tests/ --cov=internal_admin --cov-report=term-missing
 ```
 
 ---
@@ -197,22 +204,55 @@ Direct merges to `main` are not permitted.
 
 ## Versioning and Changelog
 
-This project uses [Semantic Versioning](https://semver.org).
+This project uses [Semantic Versioning](https://semver.org) and
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+**Releases are fully automated** — you do not manually bump the version.
 
-| Change type         | Version bump |
-|---------------------|--------------|
-| Bug fix             | Patch (0.0.x) |
-| New feature         | Minor (0.x.0) |
-| Breaking change     | Major (x.0.0) |
+### Commit message format
 
-Every pull request that changes behavior must include a changelog entry in
-`CHANGELOG.md` under the `[Unreleased]` section. Use the appropriate
-category: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, or `Security`.
+```
+<type>(<scope>): <short description>
 
-Breaking changes additionally require:
+[optional body]
 
-- A major version increment
-- A migration note describing what callers need to change
+[optional footer]
+```
+
+| Type | Effect |
+|------|--------|
+| `feat:` | Increments **minor** version (0.x.0) |
+| `fix:`, `perf:`, `refactor:` | Increments **patch** version (0.0.x) |
+| `feat!:` or `BREAKING CHANGE:` in footer | Increments **major** version (x.0.0) |
+| `docs:`, `chore:`, `style:`, `test:`, `ci:`, `build:` | No version bump |
+
+Examples:
+
+```
+feat(auth): add password reset via email
+fix(query): prevent N+1 on foreign-key filter
+feat!: remove deprecated `user_model` kwarg from AdminConfig
+```
+
+The pre-commit hook (`conventional-pre-commit`) enforces this format locally.
+The CI pipeline validates it on every pull request.
+
+### How a release is triggered
+
+When a pull request is merged into `main`:
+
+1. The **Release** GitHub Actions workflow runs.
+2. `python-semantic-release` reads all commits since the last tag.
+3. It determines the version bump from commit types.
+4. If a bump is warranted it:
+   - Updates `version` in `pyproject.toml`
+   - Updates `__version__` in `internal_admin/__init__.py`
+   - Rewrites `CHANGELOG.md`
+   - Commits as `chore(release): <version> [skip ci]`
+   - Creates and pushes a `v<version>` tag
+   - Creates a GitHub release with build artefacts
+   - Publishes the wheel and sdist to PyPI
+
+If no commit since the last tag produces a version bump, no release occurs.
 
 ---
 
