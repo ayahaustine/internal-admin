@@ -234,7 +234,7 @@ internal-admin createsuperuser
 Then start the server:
 
 ```bash
-python3 demo_web.py
+python3 demo.py
 ```
 
 Open [http://localhost:8080/admin/](http://localhost:8080/admin/) and log in with the
