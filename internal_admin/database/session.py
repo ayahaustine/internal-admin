@@ -4,9 +4,10 @@ SQLAlchemy session management for Internal Admin.
 Provides session factory and context management for database operations.
 """
 
-from typing import Generator
+from collections.abc import Generator
 from contextlib import contextmanager
-from sqlalchemy.orm import sessionmaker, Session
+
+from sqlalchemy.orm import Session, sessionmaker
 
 from .engine import get_engine
 
@@ -14,14 +15,14 @@ from .engine import get_engine
 class SessionManager:
     """
     Manages SQLAlchemy session creation and lifecycle.
-    
+
     Provides session factory and context managers for
     safe database transaction handling.
     """
-    
+
     def __init__(self) -> None:
         self._session_factory = None
-    
+
     def initialize(self) -> None:
         """Initialize the session factory with the global engine."""
         engine = get_engine()
@@ -31,14 +32,14 @@ class SessionManager:
             autoflush=False,
             expire_on_commit=False,
         )
-    
+
     def create_session(self) -> Session:
         """
         Create a new database session.
-        
+
         Returns:
             New SQLAlchemy session
-            
+
         Raises:
             RuntimeError: If session factory not initialized
         """
@@ -47,15 +48,15 @@ class SessionManager:
                 "SessionManager not initialized. Call initialize() first."
             )
         return self._session_factory()
-    
+
     @contextmanager
     def get_session(self) -> Generator[Session, None, None]:
         """
         Context manager for database sessions.
-        
+
         Provides automatic session cleanup and transaction handling.
         Commits on success, rolls back on exception.
-        
+
         Yields:
             Database session
         """
@@ -87,13 +88,13 @@ def get_session_manager() -> SessionManager:
 def get_session() -> Generator[Session, None, None]:
     """
     FastAPI dependency for database sessions.
-    
+
     Usage:
         @app.get("/endpoint")
         async def endpoint(db: Session = Depends(get_session)):
             # Use db session here
             pass
-    
+
     Yields:
         Database session with automatic cleanup
     """
