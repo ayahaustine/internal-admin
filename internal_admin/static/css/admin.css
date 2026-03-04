@@ -22,24 +22,29 @@ body {
     font-size: 14px;
     line-height: 1.5;
     color: var(--admin-gray-700);
+    padding-top: 56px; /* Account for fixed navbar */
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1020;
 }
 
 .sidebar {
-    position: fixed;
-    top: 60px;
-    bottom: 0;
-    left: 0;
+    min-height: calc(100vh - 60px);
     z-index: 100;
     padding: 0;
     background-color: #fff;
     border-right: 1px solid var(--admin-gray-200);
 }
 
-.sidebar-sticky {
+.sidebar .position-sticky {
     position: sticky;
-    top: 0;
-    height: calc(100vh - 60px);
-    padding: 1.5rem 0;
+    top: 1rem;
+    height: calc(100vh - 80px);
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -75,16 +80,7 @@ body {
 }
 
 main {
-    margin-left: 240px;
-    padding-top: 60px;
-    min-height: 100vh;
-}
-
-@media (max-width: 767.98px) {
-    main {
-        margin-left: 0;
-        padding-top: 60px;
-    }
+    min-height: calc(100vh - 60px);
 }
 
 .form-label {
@@ -284,32 +280,6 @@ h1, h2, h3, h4, h5, h6 {
     .btn-toolbar {
         flex-direction: column;
         align-items: stretch;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --admin-gray-50: #1f2937;
-        --admin-gray-100: #374151;
-        --admin-gray-200: #4b5563;
-        --admin-gray-300: #6b7280;
-        --admin-gray-500: #9ca3af;
-        --admin-gray-700: #d1d5db;
-        --admin-gray-800: #e5e7eb;
-        --admin-gray-900: #f9fafb;
-    }
-    
-    body {
-        background-color: var(--admin-gray-50);
-    }
-    
-    .sidebar {
-        background-color: #1f2937;
-        border-right-color: var(--admin-gray-200);
-    }
-    
-    .table, .card {
-        background-color: #374151;
     }
 }
 
