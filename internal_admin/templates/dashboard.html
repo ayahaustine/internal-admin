@@ -1,252 +1,190 @@
-{% extends "base.html" %}{% extends "base.html" %}
+{% extends "base.html" %}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{% endblock %}{% endif %}</div>    </div>        </div>            </div>                </div>                    </div>                        </div>                            </div>                                <small class="text-muted">Modify or remove existing records</small>                                <h6 class="mb-1">Edit & Delete</h6>                            <div class="flex-grow-1 ms-3">                            </div>                                </div>                                    <i class="bi bi-pencil-square"></i>                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">                            <div class="flex-shrink-0">                        <div class="d-flex align-items-center mb-3">                    <div class="col-md-4">                    </div>                        </div>                            </div>                                <small class="text-muted">Create new entries with validation</small>                                <h6 class="mb-1">Add New Records</h6>                            <div class="flex-grow-1 ms-3">                            </div>                                </div>                                    <i class="bi bi-plus-circle"></i>                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">                            <div class="flex-shrink-0">                        <div class="d-flex align-items-center mb-3">                    <div class="col-md-4">                    </div>                        </div>                            </div>                                <small class="text-muted">View, search, and filter your data</small>                                <h6 class="mb-1">Browse Records</h6>                            <div class="flex-grow-1 ms-3">                            </div>                                </div>                                    <i class="bi bi-list-ul"></i>                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">                            <div class="flex-shrink-0">                        <div class="d-flex align-items-center mb-3">                    <div class="col-md-4">                <div class="row">            <div class="card-body">            </div>                </h5>                    Quick Start                    <i class="bi bi-info-circle me-2"></i>                <h5 class="card-title mb-0">            <div class="card-header">        <div class="card">    <div class="col-12"><div class="row mt-4">{% if registered_models %}</div>    </div>        </div>            </div>                {% endif %}                </div>                    </p>                        Register your SQLAlchemy models with AdminSite to start managing them.                    <p class="text-muted">                    <h5 class="mt-3 text-muted">No Models Registered</h5>                    <i class="bi bi-inbox display-1 text-muted"></i>                <div class="text-center py-5">                {% else %}                </div>                    {% endfor %}                    </div>                        </div>                            </div>                                </div>                                    </a>                                        Add New                                        <i class="bi bi-plus-circle me-1"></i>                                    <a href="{{ model.url }}create/" class="btn btn-success btn-sm">                                    </a>                                        View All                                        <i class="bi bi-eye me-1"></i>                                    <a href="{{ model.url }}" class="btn btn-primary btn-sm">                                <div class="mt-3">                                                                </div>                                    </div>                                        </p>                                            Manage {{ model.name_plural|lower }}                                        <p class="card-text text-muted small">                                        </h6>                                            {{ model.name }}                                            <i class="bi bi-table me-2 text-primary"></i>                                        <h6 class="card-title">                                    <div>                                <div class="d-flex justify-content-between align-items-start">                            <div class="card-body">                        <div class="card h-100">                    <div class="col-md-6 col-lg-4">                    {% for model in registered_models %}                <div class="row g-3">                {% if registered_models %}            <div class="card-body">            </div>                </h5>                    Available Models                    <i class="bi bi-grid-3x3-gap-fill me-2"></i>                <h5 class="card-title mb-0">            <div class="card-header">        <div class="card">    <div class="col-12"><div class="row"></div>    </h1>        Dashboard        <i class="bi bi-speedometer2 me-2"></i>    <h1 class="h2"><div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">{% block content %}{% block title %}{{ title }} - Admin{% endblock %}
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="bi bi-speedometer2 me-2"></i>
+<div class="mb-4">
+    <h1 class="h2 mb-1">
+        <i class="bi bi-speedometer2 me-2 text-primary"></i>
         Dashboard
     </h1>
+    <p class="text-muted mb-0">Welcome to your admin panel</p>
 </div>
 
-<div class="row">
+<div class="row g-4">
+    <!-- Quick Stats -->
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-table fs-2"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fs-4 fw-bold">{{ registered_models|length }}</div>
+                                <div class="small">Registered Models</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-database fs-2"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fs-4 fw-bold">
+                                    {% if admin_config.is_sqlite %}SQLite
+                                    {% elif admin_config.is_postgresql %}PostgreSQL
+                                    {% else %}Database{% endif %}
+                                </div>
+                                <div class="small">Database Type</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-person-check fs-2"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fs-4 fw-bold">Active</div>
+                                <div class="small">User Status</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="bi bi-gear fs-2"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fs-4 fw-bold">
+                                    {% if admin_config and admin_config.debug %}Debug{% else %}Production{% endif %}
+                                </div>
+                                <div class="small">Environment</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Models -->
+    {% if registered_models %}
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-table me-2"></i>
+                    <i class="bi bi-grid-3x3-gap-fill me-2"></i>
                     Available Models
                 </h5>
             </div>
             <div class="card-body">
-                {% if registered_models %}
-                <div class="row">
+                <div class="row g-3">
                     {% for model in registered_models %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border h-100">
                             <div class="card-body">
-                                <h6 class="card-title">
-                                    <i class="bi bi-table me-2"></i>
-                                    {{ model.name_plural }}
-                                </h6>
-                                <p class="card-text text-muted">
-                                    Manage {{ model.name_plural|lower }} in the system
-                                </p>
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                <a href="{{ model.url }}" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-list-ul me-1"></i>
-                                    View {{ model.name_plural }}
-                                </a>
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="bg-light rounded-circle p-2 me-3">
+                                        <i class="bi bi-table text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-title mb-1">{{ model.name_plural }}</h6>
+                                        <p class="card-text text-muted small mb-0">Manage {{ model.name_plural|lower }}</p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ model.url }}" class="btn btn-primary btn-sm flex-fill">
+                                        <i class="bi bi-eye me-1"></i>
+                                        View All
+                                    </a>
+                                    <a href="{{ model.url }}create/" class="btn btn-outline-primary btn-sm flex-fill">
+                                        <i class="bi bi-plus-circle me-1"></i>
+                                        Add New
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox display-1 text-muted"></i>
-                    <h4 class="text-muted mt-3">No Models Registered</h4>
-                    <p class="text-muted">
-                        Register models with AdminSite.register() to see them here.
-                    </p>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
-</div>
+    {% else %}
+    <!-- No Models Registered -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                <h5 class="text-muted mb-2">No Models Registered</h5>
+                <p class="text-muted">Register your SQLAlchemy models with AdminSite to start managing them.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
-{% if registered_models %}
-<div class="row mt-4">
+    <!-- Quick Actions -->
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-info-circle me-2"></i>
+                    <i class="bi bi-lightning me-2"></i>
                     Quick Actions
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    {% for model in registered_models %}
-                    <div class="col-md-6 col-lg-3 mb-2">
-                        <a href="{{ model.url }}create/" class="btn btn-outline-success w-100">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Add {{ model.name }}
-                        </a>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="bi bi-list-ul"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Browse Records</h6>
+                                <small class="text-muted">View, search, and filter data</small>
+                            </div>
+                        </div>
                     </div>
-                    {% endfor %}
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="bi bi-plus-circle"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Add New Records</h6>
+                                <small class="text-muted">Create entries with validation</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center p-3 bg-light rounded">
+                            <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                <i class="bi bi-pencil-square"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Edit & Delete</h6>
+                                <small class="text-muted">Modify or remove records</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-gear me-2"></i>
-                    System Information
-                </h5>
-            </div>
-            <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-3">Database:</dt>
-                    <dd class="col-sm-9">
-                        {% if admin_config.is_sqlite %}
-                        <span class="badge bg-info">SQLite</span>
-                        {% elif admin_config.is_postgresql %}
-                        <span class="badge bg-primary">PostgreSQL</span>
-                        {% else %}
-                        <span class="badge bg-secondary">Other</span>
-                        {% endif %}
-                    </dd>
-                    
-                    <dt class="col-sm-3">Debug Mode:</dt>
-                    <dd class="col-sm-9">
-                        {% if admin_config.debug %}
-                        <span class="badge bg-warning">Yes</span>
-                        {% else %}
-                        <span class="badge bg-success">No</span>
-                        {% endif %}
-                    </dd>
-                    
-                    <dt class="col-sm-3">Registered Models:</dt>
-                    <dd class="col-sm-9">
-                        <span class="badge bg-info">{{ registered_models|length }}</span>
-                    </dd>
-                </dl>
             </div>
         </div>
     </div>
