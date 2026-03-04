@@ -27,7 +27,7 @@ def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRo
     Returns:
         Configured FastAPI router
     """
-    router = APIRouter(prefix="/admin", tags=["auth"])
+    router = APIRouter(tags=["auth"])
     
     # Validate user model
     validate_user_model(config.user_model)
@@ -35,6 +35,16 @@ def create_auth_router(config: AdminConfig, templates: Jinja2Templates) -> APIRo
     @router.get("/login", response_class=HTMLResponse)
     async def login_page(request: Request) -> HTMLResponse:
         """Display login form."""
+        # Check if already logged in
+        from ..database.session import get_session
+        try:
+            db_session = next(get_session())
+            user = get_current_user(request, config, db_session)
+            if user is not None:
+                return RedirectResponse(url="/admin/", status_code=302)
+        except:
+            pass
+            
         context = {
             "request": request,
             "title": "Admin Login",

@@ -31,7 +31,12 @@ class SecurityManager:
             config: AdminConfig instance with security settings
         """
         self.config = config
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        # Use bcrypt as primary hasher for reliability
+        self.pwd_context = CryptContext(
+            schemes=["bcrypt"], 
+            deprecated="auto",
+            bcrypt__rounds=12
+        )
         
         # JWT settings for session tokens
         self.algorithm = "HS256"
@@ -47,6 +52,10 @@ class SecurityManager:
         Returns:
             Hashed password string
         """
+        # Ensure password is not too long (bcrypt limitation)
+        if len(password.encode('utf-8')) > 72:
+            password = password[:72]
+            
         return self.pwd_context.hash(password)
     
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
