@@ -129,4 +129,7 @@ MIT License - see [LICENSE](./LICENSE) file.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines, architecture
+constraints, and the pull request process.
+
+All contributors are expected to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
