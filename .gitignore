@@ -212,3 +212,6 @@ architecture.md
 CONTRIBUTING.md
 guide.md
 TESTING.md
+
+# sqlite db
+*.db
