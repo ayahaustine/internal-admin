@@ -163,6 +163,29 @@ def get_current_user(
     return None
 
 
+def create_auth_dependency(config: AdminConfig):
+    """Create authentication dependency for a specific config."""
+    def get_current_user_dependency(
+        request: Request,
+        db: Session = Depends(get_session)
+    ) -> Optional[Any]:
+        return get_current_user(request, config, db)
+    
+    def require_auth_dependency(
+        user: Optional[Any] = Depends(get_current_user_dependency)
+    ) -> Any:
+        """Require authentication dependency."""
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required"
+            )
+        return user
+    
+    return get_current_user_dependency, require_auth_dependency
+
+
+# Legacy function for backward compatibility
 def require_auth(
     user: Optional[Any] = Depends(get_current_user)
 ) -> Any:

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..config import AdminConfig
 from ..database.session import get_session
-from ..auth.routes import get_current_user, require_auth
+from ..auth.routes import get_current_user, create_auth_dependency
 from ..auth.permissions import Permission
 from .model_admin import ModelAdmin
 from .query_engine import QueryEngine
@@ -55,19 +55,22 @@ class AdminRouterFactory:
             FastAPI router with CRUD endpoints
         """
         model_name = model_class.__name__.lower()
-        router = APIRouter(prefix=f"/admin/{model_name}", tags=[f"admin-{model_name}"])
+        router = APIRouter(prefix=f"/{model_name}", tags=[f"admin-{model_name}"])
         
         # Initialize engines
         query_engine = QueryEngine(model_admin)
         form_engine = FormEngine(model_admin)
         filter_manager = FilterManager(model_admin)
         
+        # Create authentication dependencies
+        get_current_user_dep, require_auth_dep = create_auth_dependency(self.config)
+        
         @router.get("/", response_class=HTMLResponse, name=f"{model_name}_list")
         async def list_view(
             request: Request,
             page: int = 1,
             search: Optional[str] = None,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> HTMLResponse:
             """List view for model objects."""
@@ -121,7 +124,7 @@ class AdminRouterFactory:
         @router.get("/create/", response_class=HTMLResponse, name=f"{model_name}_create")
         async def create_form(
             request: Request,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> HTMLResponse:
             """Create form for new model object."""
@@ -148,7 +151,7 @@ class AdminRouterFactory:
         @router.post("/create/", name=f"{model_name}_create_submit")
         async def create_submit(
             request: Request,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> RedirectResponse:
             """Handle create form submission."""
@@ -212,7 +215,7 @@ class AdminRouterFactory:
         async def edit_form(
             request: Request,
             item_id: int,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> HTMLResponse:
             """Edit form for existing model object."""
@@ -253,7 +256,7 @@ class AdminRouterFactory:
         async def edit_submit(
             request: Request,
             item_id: int,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> RedirectResponse:
             """Handle edit form submission."""
@@ -326,7 +329,7 @@ class AdminRouterFactory:
         async def delete_confirmation(
             request: Request,
             item_id: int,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> HTMLResponse:
             """Delete confirmation page."""
@@ -361,7 +364,7 @@ class AdminRouterFactory:
         async def delete_submit(
             request: Request,
             item_id: int,
-            user: Any = Depends(require_auth),
+            user: Any = Depends(require_auth_dep),
             db: Session = Depends(get_session)
         ) -> RedirectResponse:
             """Handle delete confirmation."""
