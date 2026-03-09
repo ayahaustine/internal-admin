@@ -10,9 +10,11 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Boolean, Column, Date, DateTime, Float, Integer, String, Text
+from sqlalchemy.inspection import inspect as sa_inspect
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.sqltypes import TypeDecorator
 
+from ..registry import get_registry
 from .model_admin import ModelAdmin
 
 
@@ -53,6 +55,7 @@ class FormEngine:
         self.model_admin = model_admin
         self.model = model_admin.model
         self._type_mapping = self._get_type_mapping()
+        self._foreign_key_choice_limit = 200
 
     def generate_form_fields(self, session: Session, instance: Any | None = None) -> list[FormField]:
         """
@@ -198,24 +201,64 @@ class FormEngine:
         Returns:
             List of (value, label) tuples
         """
-        choices = [("", "-- Select --")]
+        related_model = self._get_related_model_for_column(column)
+        if related_model is None:
+            return []
 
-        # Get the referenced table and model
-        list(column.foreign_keys)[0]
-
-        # Find the model class for the referenced table
-        # This is a simplified approach - in practice, you might need
-        # a more sophisticated model registry lookup
         try:
-            # Try to find model class by table name
-            # This requires models to be registered or discoverable
+            mapper = sa_inspect(related_model)
+            pk_attr = mapper.primary_key[0].key
 
-            # For now, skip foreign key choices - can be implemented later
-            # when we have better model discovery
-            return choices
+            label_attr = self._resolve_related_label_attr(related_model)
+            query = session.query(related_model)
+            if label_attr and hasattr(related_model, label_attr):
+                query = query.order_by(getattr(related_model, label_attr).asc())
+            else:
+                query = query.order_by(getattr(related_model, pk_attr).asc())
 
+            rows = query.limit(self._foreign_key_choice_limit).all()
+            return [
+                (getattr(row, pk_attr), self._get_related_display_value(row, label_attr, pk_attr))
+                for row in rows
+            ]
         except Exception:
-            return choices
+            return []
+
+    def _get_related_model_for_column(self, column: Column) -> type[Any] | None:
+        relationships = sa_inspect(self.model).relationships
+        for relationship in relationships:
+            if column in relationship.local_columns:
+                return relationship.mapper.class_
+
+        try:
+            foreign_key = next(iter(column.foreign_keys))
+        except StopIteration:
+            return None
+
+        referenced_table = foreign_key.column.table
+        for model_class in get_registry().get_registered_models().keys():
+            if getattr(model_class, "__table__", None) is referenced_table:
+                return model_class
+
+        return None
+
+    def _resolve_related_label_attr(self, related_model: type[Any]) -> str | None:
+        preferred = ("display_name", "name", "title", "username", "email")
+        for attr_name in preferred:
+            if hasattr(related_model, attr_name):
+                return attr_name
+        return None
+
+    def _get_related_display_value(self, row: Any, label_attr: str | None, pk_attr: str) -> str:
+        if label_attr:
+            value = getattr(row, label_attr, None)
+            if value not in (None, ""):
+                return str(value)
+
+        value = str(row)
+        if value.startswith("<") and " object at " in value:
+            return str(getattr(row, pk_attr))
+        return value
 
     def validate_form_data(self, form_data: dict[str, Any]) -> dict[str, Any]:
         """
