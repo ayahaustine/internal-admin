@@ -8,9 +8,9 @@ from typing import Generator, Any
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, relationship
 
 from internal_admin import AdminSite, AdminConfig, ModelAdmin
 from internal_admin.auth.models import AdminUser
@@ -30,6 +30,10 @@ class TestUser(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
 
+    @property
+    def display_name(self) -> str:
+        return self.username or f"User {self.id}"
+
 
 class TestModel(Base):
     """Simple test model for admin testing."""
@@ -41,11 +45,49 @@ class TestModel(Base):
     is_active = Column(Boolean, default=True)
 
 
+class TestCategory(Base):
+    """Related model for foreign key tests."""
+    __tablename__ = "test_categories"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+
+    products = relationship("TestProduct", back_populates="category")
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class TestProduct(Base):
+    """Model containing a foreign key for admin tests."""
+    __tablename__ = "test_products"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    category_id = Column(Integer, ForeignKey("test_categories.id"), nullable=False)
+    is_active = Column(Boolean, default=True)
+
+    category = relationship("TestCategory", back_populates="products")
+
+
 class TestModelAdmin(ModelAdmin):
     """Test ModelAdmin configuration."""
     list_display = ["id", "name", "is_active"]
     search_fields = ["name", "description"]
     list_filter = ["is_active"]
+
+
+class TestCategoryAdmin(ModelAdmin):
+    """Admin configuration for category model."""
+    list_display = ["id", "name"]
+    search_fields = ["name"]
+
+
+class TestProductAdmin(ModelAdmin):
+    """Admin configuration for product model."""
+    list_display = ["id", "name", "category_id", "is_active"]
+    search_fields = ["name"]
+    list_filter = ["category_id", "is_active"]
 
 
 @pytest.fixture(scope="session")
@@ -87,6 +129,8 @@ def admin_site(admin_config: AdminConfig) -> AdminSite:
     # Create fresh AdminSite after clearing registry
     site = AdminSite(admin_config)
     site.register(TestModel, TestModelAdmin)
+    site.register(TestCategory, TestCategoryAdmin)
+    site.register(TestProduct, TestProductAdmin)
     return site
 
 
@@ -148,6 +192,29 @@ def test_objects(db_session: Session) -> list[TestModel]:
     
     db_session.commit()
     return objects
+
+
+@pytest.fixture
+def fk_objects(db_session: Session) -> dict[str, Any]:
+    """Create related objects for foreign key tests."""
+    categories = [
+        TestCategory(name="Hardware"),
+        TestCategory(name="Software"),
+    ]
+    db_session.add_all(categories)
+    db_session.flush()
+
+    products = [
+        TestProduct(name="Keyboard", category_id=categories[0].id, is_active=True),
+        TestProduct(name="IDE License", category_id=categories[1].id, is_active=True),
+    ]
+    db_session.add_all(products)
+    db_session.commit()
+
+    return {
+        "categories": categories,
+        "products": products,
+    }
 
 
 @pytest.fixture
