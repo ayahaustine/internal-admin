@@ -85,7 +85,7 @@
                                     {% if field.choices %}
                                         {% for value, display in field.choices %}
                                         <option value="{{ value }}"
-                                                {% if form_data.get(field.name, field.default_value) == value %}selected{% endif %}>
+                                                {% if (form_data.get(field.name, field.default_value)|string) == (value|string) %}selected{% endif %}>
                                             {{ display }}
                                         </option>
                                         {% endfor %}

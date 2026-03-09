@@ -9,7 +9,9 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from sqlalchemy import Boolean, Date, DateTime
+from sqlalchemy.inspection import inspect as sa_inspect
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.sqltypes import TypeDecorator
 
 from .model_admin import ModelAdmin
 
@@ -204,9 +206,44 @@ class ForeignKeyFilter(BaseFilter):
         if not hasattr(model_class, self.field_name):
             return []
 
-        # This is simplified - in practice you'd need proper relationship introspection
-        # For now, return empty choices
-        return []
+        try:
+            relationship = self._find_relationship(model_class)
+            if relationship is None:
+                return []
+
+            related_model = relationship.mapper.class_
+            related_mapper = sa_inspect(related_model)
+            pk_attr = related_mapper.primary_key[0].key
+
+            label_attr = self.display_field if hasattr(related_model, self.display_field) else None
+            if label_attr is None:
+                for candidate in ("display_name", "name", "title", "username", "email"):
+                    if hasattr(related_model, candidate):
+                        label_attr = candidate
+                        break
+
+            query = session.query(related_model)
+            if label_attr:
+                query = query.order_by(getattr(related_model, label_attr).asc())
+            else:
+                query = query.order_by(getattr(related_model, pk_attr).asc())
+
+            rows = query.limit(200).all()
+            choices = []
+            for row in rows:
+                value = getattr(row, pk_attr)
+                if label_attr:
+                    label_value = getattr(row, label_attr, None)
+                    display = str(label_value) if label_value not in (None, "") else str(value)
+                else:
+                    display = str(row)
+                    if display.startswith("<") and " object at " in display:
+                        display = str(value)
+                choices.append((value, display))
+
+            return choices
+        except Exception:
+            return []
 
     def apply_filter(self, query: Any, value: Any) -> Any:
         """Apply foreign key filter."""
@@ -216,7 +253,26 @@ class ForeignKeyFilter(BaseFilter):
         model_class = query.column_descriptions[0]['type']
         field = getattr(model_class, self.field_name)
 
+        column = model_class.__table__.columns.get(self.field_name)
+        if column is not None:
+            column_type = type(column.type)
+            if isinstance(column.type, TypeDecorator):
+                column_type = type(column.type.impl)
+            try:
+                if column_type.__name__ in {"Integer", "BigInteger", "SmallInteger"}:
+                    value = int(value)
+            except (TypeError, ValueError):
+                return query
+
         return query.filter(field == value)
+
+    def _find_relationship(self, model_class: type[Any]) -> Any | None:
+        mapper = sa_inspect(model_class)
+        for relationship in mapper.relationships:
+            for local_column in relationship.local_columns:
+                if local_column.key == self.field_name:
+                    return relationship
+        return None
 
 
 class FilterManager:

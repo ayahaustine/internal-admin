@@ -8,8 +8,10 @@ including filtering, searching, ordering, and pagination.
 from typing import Any
 
 from sqlalchemy import or_
+from sqlalchemy import Boolean, Date, DateTime, Float, Integer
 from sqlalchemy.orm import Query, Session
 from sqlalchemy.orm.strategy_options import selectinload
+from sqlalchemy.sql.sqltypes import TypeDecorator
 
 from .model_admin import ModelAdmin
 
@@ -199,9 +201,15 @@ class QueryEngine:
                 continue
 
             field = getattr(self.model, field_name)
+            column = self.model.__table__.columns.get(field_name)
 
             # Skip empty values
             if value is None or value == "":
+                continue
+
+            try:
+                value = self._coerce_filter_value(column, value)
+            except ValueError:
                 continue
 
             # Handle different filter types
@@ -216,6 +224,42 @@ class QueryEngine:
                 query = query.filter(field == value)
 
         return query
+
+    def _coerce_filter_value(self, column: Any, value: Any) -> Any:
+        if column is None:
+            return value
+
+        if isinstance(value, (list, tuple)):
+            return [self._coerce_filter_value(column, item) for item in value]
+
+        column_type = type(column.type)
+        if isinstance(column.type, TypeDecorator):
+            column_type = type(column.type.impl)
+
+        if column_type == Boolean:
+            if isinstance(value, bool):
+                return value
+            normalized = str(value).strip().lower()
+            if normalized in {"true", "1", "yes", "on"}:
+                return True
+            if normalized in {"false", "0", "no", "off"}:
+                return False
+            raise ValueError("Invalid boolean filter value")
+
+        if column_type == Integer:
+            return int(value)
+        if column_type == Float:
+            return float(value)
+        if column_type == Date:
+            if isinstance(value, str):
+                return Date().python_type.fromisoformat(value)
+            return value
+        if column_type == DateTime:
+            if isinstance(value, str):
+                return DateTime().python_type.fromisoformat(value.replace("T", " "))
+            return value
+
+        return value
 
     def _apply_ordering(self, query: Query, ordering: list[str] | None) -> Query:
         """
