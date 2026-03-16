@@ -1,0 +1,28 @@
+# Include documentation files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+
+# Include static assets
+recursive-include internal_admin/static *.css *.js *.png *.jpg *.svg *.ico
+recursive-include internal_admin/templates *.html
+
+# Include configuration
+include pyproject.toml
+
+# Exclude development and build artifacts
+exclude .env
+exclude .env.example
+exclude demo.py
+exclude example.py
+exclude cookies.txt
+exclude *.db
+recursive-exclude tests *
+recursive-exclude .github *
+recursive-exclude __pycache__ *
+recursive-exclude *.egg-info *
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .DS_Store

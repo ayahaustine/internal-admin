@@ -1,5 +1,11 @@
 # Internal Admin
 
+[![CI](https://github.com/ayahaustine/internal-admin/workflows/CI/badge.svg)](https://github.com/ayahaustine/internal-admin/actions/workflows/ci.yml)
+[![Release](https://github.com/ayahaustine/internal-admin/workflows/Release/badge.svg)](https://github.com/ayahaustine/internal-admin/actions/workflows/release.yml)
+[![PyPI version](https://badge.fury.io/py/internal-admin.svg)](https://pypi.org/project/internal-admin/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/internal-admin.svg)](https://pypi.org/project/internal-admin/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A reusable, pip-installable administrative framework for FastAPI applications.
 Automatically generates a full CRUD interface from your SQLAlchemy models, with
 session-based authentication, role-based permissions, and a clean Bootstrap 5 UI
